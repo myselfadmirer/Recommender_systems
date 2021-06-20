@@ -1,6 +1,11 @@
 import pandas as pd
 import numpy as np
 
+# Матричная факторизация
+from implicit.als import AlternatingLeastSquares
+from implicit.nearest_neighbours import ItemItemRecommender
+from implicit.nearest_neighbours import bm25_weight, tfidf_weight
+
 # Для работы с матрицами
 from scipy.sparse import csr_matrix
 
@@ -34,7 +39,14 @@ class MainRecommender:
 
     @staticmethod
     def prepare_matrix(data):
-        # your_code
+        user_item_matrix = pd.pivot_table(data_train, 
+                                  index='user_id', columns='item_id', 
+                                  values='quantity',
+                                  aggfunc='count', 
+                                  fill_value=0
+                                 )
+
+        user_item_matrix = user_item_matrix.astype(float)
 
         return user_item_matrix
 
@@ -80,16 +92,27 @@ class MainRecommender:
     def get_similar_items_recommendation(self, user, N=5):
         """Рекомендуем товары, похожие на топ-N купленных юзером товаров"""
 
-        # your_code
-        # Практически полностью реализовали на прошлом вебинаре
-
+        res = [id_to_itemid[rec[0]] for rec in 
+                        model.recommend(userid=userid_to_id[user], 
+                                        user_items=sparse_user_item,
+                                        N=N, 
+                                        filter_already_liked_items=False, 
+                                        filter_items=None, 
+                                        recalculate_user=True)]
+        
         assert len(res) == N, 'Количество рекомендаций != {}'.format(N)
         return res
 
     def get_similar_users_recommendation(self, user, N=5):
         """Рекомендуем топ-N товаров, среди купленных похожими юзерами"""
 
-    # your_code
-
-    assert len(res) == N, 'Количество рекомендаций != {}'.format(N)
-    return res
+        res = [id_to_userid[rec[0]] for rec in 
+                        model.recommend(itemid=itemid_to_id[item], 
+                                        user_items=sparse_user_item,
+                                        N=N, 
+                                        filter_already_liked_items=False, 
+                                        filter_items=None, 
+                                        recalculate_user=True)]
+        
+        assert len(res) == N, 'Количество рекомендаций != {}'.format(N)
+        return res
